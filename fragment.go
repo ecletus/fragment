@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/aghape/db/common"
-	"github.com/aghape/aghape/serializer"
+	"github.com/aghape/core/serializer"
 )
 
 const FIELD = "Fragments"
