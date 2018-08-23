@@ -4,14 +4,13 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/aghape/db/common"
 	"github.com/aghape/core/serializer"
+	"github.com/aghape/db/common"
+	"github.com/moisespsena-go/aorm"
 )
 
-const FIELD = "Fragments"
-
 type FragmentedModelInterface interface {
-	common.WithID
+	aorm.ModelInterface
 	serializer.SerializableField
 	GetFragments() map[string]FragmentModelInterface
 	GetFragment(id string) FragmentModelInterface
@@ -145,7 +144,7 @@ type FormFragmentModelInterface interface {
 
 type FragmentModel struct {
 	FragmentedModel
-	common.IDString
+	aorm.KeyString
 	super FragmentedModelInterface
 }
 
