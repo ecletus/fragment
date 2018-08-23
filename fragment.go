@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/aghape/core/serializer"
-	"github.com/aghape/db/common"
 	"github.com/moisespsena-go/aorm"
 )
 
@@ -128,7 +127,6 @@ func (f *FragmentedModel) GetSerializableField(name string) (interface{}, bool) 
 
 type FragmentModelInterface interface {
 	FragmentedModelInterface
-	common.WithIDSetter
 	SuperID() string
 	Super() FragmentedModelInterface
 	SetSuper(super FragmentedModelInterface)
