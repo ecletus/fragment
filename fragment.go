@@ -101,7 +101,7 @@ func (f *FragmentedModel) SetFormFragment(id string, value FormFragmentModelInte
 	f.FormFragments[id] = value
 }
 
-func (f *FragmentedModel) GetSerializableField(name string) (interface{}, bool) {
+func (f *FragmentedModel) GetVirtualField(name string) (interface{}, bool) {
 	if f.Fragments != nil {
 		for _, v := range f.Fragments {
 			if f := reflect.ValueOf(v).Elem().FieldByName(name); f.IsValid() {
@@ -118,7 +118,7 @@ func (f *FragmentedModel) GetSerializableField(name string) (interface{}, bool) 
 			if f := reflect.ValueOf(v).Elem().FieldByName(parts[1]); f.IsValid() {
 				return f.Interface(), true
 			} else if gsf, ok := v.(serializer.SerializableField); ok {
-				return gsf.GetSerializableField(strings.Join(parts[1:], "."))
+				return gsf.GetVirtualField(strings.Join(parts[1:], "."))
 			}
 		}
 	}
