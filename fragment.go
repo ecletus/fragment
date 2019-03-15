@@ -2,21 +2,20 @@ package fragment
 
 import (
 	"reflect"
-	"strings"
 
-	"github.com/aghape/core/serializer"
 	"github.com/moisespsena-go/aorm"
 )
 
 type FragmentedModelInterface interface {
 	aorm.ModelInterface
-	serializer.SerializableField
+	aorm.VirtualFieldsGetter
+
 	GetFragments() map[string]FragmentModelInterface
 	GetFragment(id string) FragmentModelInterface
-	SetFragment(id string, value FragmentModelInterface)
+	SetFragment(super FragmentedModelInterface, id string, value FragmentModelInterface)
 	GetFormFragments() map[string]FormFragmentModelInterface
 	GetFormFragment(id string) FormFragmentModelInterface
-	SetFormFragment(id string, value FormFragmentModelInterface)
+	SetFormFragment(super FragmentedModelInterface, id string, value FormFragmentModelInterface)
 	SetData(key, value interface{})
 	GetData(key interface{}) (value interface{}, ok bool)
 	HasData(key interface{}) (ok bool)
@@ -73,11 +72,21 @@ func (f *FragmentedModel) GetFragment(id string) FragmentModelInterface {
 	return f.Fragments[id]
 }
 
-func (f *FragmentedModel) SetFragment(id string, value FragmentModelInterface) {
-	if f.Fragments == nil {
-		f.Fragments = make(map[string]FragmentModelInterface)
+func (f *FragmentedModel) SetFragment(super FragmentedModelInterface, id string, value FragmentModelInterface) {
+	if value == nil {
+		if f.Fragments != nil {
+			if old, ok := f.Fragments[id]; ok {
+				old.SetSuper(nil)
+				delete(f.Fragments, id)
+			}
+		}
+	} else {
+		if f.Fragments == nil {
+			f.Fragments = make(map[string]FragmentModelInterface)
+		}
+		f.Fragments[id] = value
+		value.SetSuper(super)
 	}
-	f.Fragments[id] = value
 }
 
 func (f *FragmentedModel) GetFormFragments() map[string]FormFragmentModelInterface {
@@ -94,11 +103,21 @@ func (f *FragmentedModel) GetFormFragment(id string) FormFragmentModelInterface 
 	return f.FormFragments[id]
 }
 
-func (f *FragmentedModel) SetFormFragment(id string, value FormFragmentModelInterface) {
-	if f.FormFragments == nil {
-		f.FormFragments = make(map[string]FormFragmentModelInterface)
+func (f *FragmentedModel) SetFormFragment(super FragmentedModelInterface, id string, value FormFragmentModelInterface) {
+	if value == nil {
+		if f.FormFragments != nil {
+			if old, ok := f.FormFragments[id]; ok {
+				old.SetSuper(nil)
+				delete(f.FormFragments, id)
+			}
+		}
+	} else {
+		if f.FormFragments == nil {
+			f.FormFragments = make(map[string]FormFragmentModelInterface)
+		}
+		f.FormFragments[id] = value
+		value.SetSuper(super)
 	}
-	f.FormFragments[id] = value
 }
 
 func (f *FragmentedModel) GetVirtualField(name string) (interface{}, bool) {
@@ -109,17 +128,10 @@ func (f *FragmentedModel) GetVirtualField(name string) (interface{}, bool) {
 			}
 		}
 	}
-	parts := strings.SplitN(name, ".", 3)
+
 	if f.FormFragments != nil {
-		if v, ok := f.FormFragments[parts[0]]; ok {
-			if len(parts) == 1 {
-				return v, true
-			}
-			if f := reflect.ValueOf(v).Elem().FieldByName(parts[1]); f.IsValid() {
-				return f.Interface(), true
-			} else if gsf, ok := v.(serializer.SerializableField); ok {
-				return gsf.GetVirtualField(strings.Join(parts[1:], "."))
-			}
+		if v, ok := f.FormFragments[name]; ok {
+			return v, true
 		}
 	}
 	return nil, false
