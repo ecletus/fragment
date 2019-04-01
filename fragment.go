@@ -23,6 +23,8 @@ type FragmentedModelInterface interface {
 }
 
 type FragmentedModel struct {
+	aorm.VirtualFields
+
 	Fragments     map[string]FragmentModelInterface     `sql:"-";gorm:"-"`
 	FormFragments map[string]FormFragmentModelInterface `sql:"-";gorm:"-"`
 	data          map[interface{}]interface{}
@@ -134,7 +136,8 @@ func (f *FragmentedModel) GetVirtualField(name string) (interface{}, bool) {
 			return v, true
 		}
 	}
-	return nil, false
+
+	return f.VirtualFields.GetVirtualField(name)
 }
 
 type FragmentModelInterface interface {
