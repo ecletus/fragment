@@ -3,24 +3,10 @@ package fragment
 import (
 	"reflect"
 
+	"github.com/moisespsena-go/bid"
+
 	"github.com/moisespsena-go/aorm"
 )
-
-type FragmentedModelInterface interface {
-	aorm.ModelInterface
-	aorm.VirtualFieldsGetter
-
-	GetFragments() map[string]FragmentModelInterface
-	GetFragment(id string) FragmentModelInterface
-	SetFragment(super FragmentedModelInterface, id string, value FragmentModelInterface)
-	GetFormFragments() map[string]FormFragmentModelInterface
-	GetFormFragment(id string) FormFragmentModelInterface
-	SetFormFragment(super FragmentedModelInterface, id string, value FormFragmentModelInterface)
-	SetData(key, value interface{})
-	GetData(key interface{}) (value interface{}, ok bool)
-	HasData(key interface{}) (ok bool)
-	DeleteData(key interface{}) (ok bool)
-}
 
 type FragmentedModel struct {
 	aorm.VirtualFields
@@ -140,59 +126,57 @@ func (f *FragmentedModel) GetVirtualField(name string) (interface{}, bool) {
 	return f.VirtualFields.GetVirtualField(name)
 }
 
-type FragmentModelInterface interface {
-	FragmentedModelInterface
-	SuperID() string
-	Super() FragmentedModelInterface
-	SetSuper(super FragmentedModelInterface)
-}
-
-type FormFragmentModelInterface interface {
-	FragmentModelInterface
-	Enabled() bool
-	SetEnabled(v bool)
-	Enable()
-	Disable()
-}
-
 type FragmentModel struct {
-	FragmentedModel
-	aorm.KeyString
-	super FragmentedModelInterface
-}
-
-func (f *FragmentModel) SuperID() string {
-	return f.ID
-}
-
-func (f *FragmentModel) Super() FragmentedModelInterface {
-	return f.super
+	ID bid.BID `aorm:"primary_key"`
+	SingletonFragmentModel
 }
 
 func (f *FragmentModel) SetSuper(super FragmentedModelInterface) {
 	f.super = super
 	if super != nil {
-		f.SetID(super.GetID())
+		f.ID = aorm.RawOfId(aorm.IdOf(super)).(bid.BID)
 	}
+}
+
+type SingletonFragmentModel struct {
+	FragmentedModel
+	super FragmentedModelInterface
+}
+
+func (f *SingletonFragmentModel) Super() FragmentedModelInterface {
+	return f.super
+}
+
+func (f *SingletonFragmentModel) SetSuper(super FragmentedModelInterface) {
+	f.super = super
+}
+
+type FragmentEnabledAttribute struct {
+	FragmentEnabled bool
+}
+
+func (f *FragmentEnabledAttribute) Enabled() bool {
+	return f.FragmentEnabled
+}
+
+func (f *FragmentEnabledAttribute) SetEnabled(v bool) {
+	f.FragmentEnabled = v
+}
+
+func (f *FragmentEnabledAttribute) Enable() {
+	f.FragmentEnabled = true
+}
+
+func (f *FragmentEnabledAttribute) Disable() {
+	f.FragmentEnabled = false
+}
+
+type SingletonFormFragmentModel struct {
+	SingletonFragmentModel
+	FragmentEnabledAttribute
 }
 
 type FormFragmentModel struct {
 	FragmentModel
-	FragmentEnabled bool
-}
-
-func (f *FormFragmentModel) Enabled() bool {
-	return f.FragmentEnabled
-}
-
-func (f *FormFragmentModel) SetEnabled(v bool) {
-	f.FragmentEnabled = v
-}
-
-func (f *FormFragmentModel) Enable() {
-	f.FragmentEnabled = true
-}
-
-func (f *FormFragmentModel) Disable() {
-	f.FragmentEnabled = false
+	FragmentEnabledAttribute
 }
